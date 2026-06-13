@@ -1,0 +1,13 @@
+# Environment
+.env
+
+# Binaries
+v0/spotify-stego
+v1/spotify-stego
+
+# Go build artifacts
+*.exe
+*.out
+
+# macOS
+.DS_Store

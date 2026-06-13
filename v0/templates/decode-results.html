@@ -1,0 +1,26 @@
+{{define "decode-results.html"}}
+{{if .Error}}
+<div class="alert-error">{{.Error}}</div>
+{{else}}
+<div class="results">
+  <h2>Decoded Message</h2>
+  <div class="message-box">{{.Message}}</div>
+
+  <h3>Per-track extraction</h3>
+  <table class="track-table">
+    <thead>
+      <tr><th>#</th><th>Title</th><th>Letters extracted</th></tr>
+    </thead>
+    <tbody>
+    {{range $i, $e := .Extractions}}
+      <tr>
+        <td>{{inc $i}}</td>
+        <td>{{$e.Track.Title}}</td>
+        <td><code>{{string $e.Letters}}</code></td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+{{end}}

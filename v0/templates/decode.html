@@ -1,0 +1,34 @@
+{{define "decode.html"}}
+<form hx-post="/decode" hx-target="#decode-results" hx-swap="innerHTML" hx-indicator="#decode-spinner">
+  <div class="form-group">
+    <label for="tracks">Playlist Tracks</label>
+    <textarea id="tracks" name="tracks" rows="10"
+      placeholder="One track per line: Title | Artist&#10;e.g. Bohemian Rhapsody | Queen"></textarea>
+  </div>
+
+  <fieldset>
+    <legend>Secret Keywords</legend>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="dk1">Keyword 1</label>
+        <input id="dk1" name="k1" type="text" required placeholder="e.g. sunrise">
+      </div>
+      <div class="form-group">
+        <label for="dk2">Keyword 2</label>
+        <input id="dk2" name="k2" type="text" required placeholder="e.g. delta">
+      </div>
+      <div class="form-group">
+        <label for="dk3">Keyword 3</label>
+        <input id="dk3" name="k3" type="text" required placeholder="e.g. tango">
+      </div>
+    </div>
+  </fieldset>
+
+  <button type="submit" class="btn-primary">
+    <span id="decode-spinner" class="htmx-indicator">Decoding…</span>
+    <span class="btn-label">Decode</span>
+  </button>
+</form>
+
+<div id="decode-results"></div>
+{{end}}

@@ -1,0 +1,44 @@
+{{define "encode-results.html"}}
+{{if .Error}}
+<div class="alert-error">{{.Error}}</div>
+{{else}}
+<div class="results">
+  <h2>Encoded Playlist</h2>
+
+  <div class="stats-row">
+    <div class="stat"><span class="stat-label">Message length</span><span class="stat-value">{{.MsgLen}}</span></div>
+    <div class="stat"><span class="stat-label">Playlist tracks</span><span class="stat-value">{{.PlaylistLen}}</span></div>
+    <div class="stat"><span class="stat-label">Total duration</span><span class="stat-value">{{.TotalDuration}}</span></div>
+    <div class="stat"><span class="stat-label">Musicality score</span><span class="stat-value">{{printf "%.0f" .MusicalScore}}%</span></div>
+  </div>
+
+  <table class="track-table">
+    <thead>
+      <tr><th>#</th><th>Title</th><th>Artist</th><th>Camelot</th><th>BPM</th></tr>
+    </thead>
+    <tbody>
+    {{range $i, $t := .Tracks}}
+      <tr>
+        <td>{{inc $i}}</td>
+        <td>{{$t.Title}}</td>
+        <td>{{$t.Artist}}</td>
+        <td><span class="camelot-badge">{{$t.CamelotCode}}</span></td>
+        <td>{{printf "%.0f" $t.BPM}}</td>
+      </tr>
+    {{end}}
+    </tbody>
+  </table>
+
+  <div class="viz-row">
+    <div class="viz-panel">
+      <h3>Camelot Wheel</h3>
+      {{.WheelSVG}}
+    </div>
+    <div class="viz-panel">
+      <h3>BPM Graph</h3>
+      {{.BPMSVG}}
+    </div>
+  </div>
+</div>
+{{end}}
+{{end}}
