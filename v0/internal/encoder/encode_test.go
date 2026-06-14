@@ -79,3 +79,41 @@ func TestEncodeMessageLength(t *testing.T) {
 		t.Fatalf("expected 15 tracks, got %d", len(playlist))
 	}
 }
+
+func TestEncodePayloadExceedsTarget(t *testing.T) {
+	pool := deterministicPool()
+	kw := [3]string{"a", "b", "c"}
+	// 8-char message → payload = 3-char prefix + 8 chars = 11 > targetLength 5.
+	_, err := EncodeMessage(pool, "abcdefgh", kw, 5)
+	if err == nil {
+		t.Fatal("expected error when payload exceeds target, got nil")
+	}
+	if !strings.Contains(err.Error(), "exceeds") {
+		t.Errorf("error %q should contain %q", err.Error(), "exceeds")
+	}
+}
+
+func TestEncodeNilPool(t *testing.T) {
+	kw := [3]string{"a", "b", "c"}
+	_, err := EncodeMessage(nil, "hi", kw, 10)
+	if err == nil {
+		t.Fatal("expected error for nil pool, got nil")
+	}
+}
+
+func TestNormalizeMessage(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"Hello, World! 123", "helloworld"},
+		{"", ""},
+		{"123", ""},
+		{"UPPER", "upper"},
+	}
+	for _, c := range cases {
+		got := NormalizeMessage(c.in)
+		if got != c.want {
+			t.Errorf("NormalizeMessage(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}

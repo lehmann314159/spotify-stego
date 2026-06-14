@@ -1,0 +1,9 @@
+{{define "save-result.html"}}
+{{if .ConnectSpotify}}
+<p><a href="/auth/spotify/login" class="btn-secondary">Connect Spotify</a></p>
+{{else if .Error}}
+<p class="alert-error">{{.Error}}</p>
+{{else if .PlaylistURL}}
+<p class="save-success">Saved! <a href="{{.PlaylistURL}}" target="_blank" rel="noopener">Open playlist in Spotify</a></p>
+{{end}}
+{{end}}

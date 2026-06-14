@@ -9,7 +9,19 @@
     <div class="stat"><span class="stat-label">Message length</span><span class="stat-value">{{.MsgLen}}</span></div>
     <div class="stat"><span class="stat-label">Playlist tracks</span><span class="stat-value">{{.PlaylistLen}}</span></div>
     <div class="stat"><span class="stat-label">Total duration</span><span class="stat-value">{{.TotalDuration}}</span></div>
-    <div class="stat"><span class="stat-label">Musicality score</span><span class="stat-value">{{printf "%.0f" .MusicalScore}}%</span></div>
+    <div class="stat">
+      <span class="stat-label">Musicality score</span>
+      <span class="stat-value score-{{.ScoreClass}}">
+        {{printf "%.0f" .MusicalScore}}% — {{.ScoreLabel}}
+      </span>
+      <details class="score-detail">
+        <summary>What is this?</summary>
+        <p>Measures harmonic and rhythmic coherence between consecutive tracks.
+        Camelot wheel compatibility contributes up to 10 points per transition;
+        BPM proximity contributes up to 5 points. Combined and normalized to
+        0–100%.</p>
+      </details>
+    </div>
   </div>
 
   <table class="track-table">
@@ -28,6 +40,14 @@
     {{end}}
     </tbody>
   </table>
+
+  <button class="btn-secondary"
+          hx-post="/encode/save"
+          hx-target="#save-result"
+          hx-swap="innerHTML">
+    Save to Spotify
+  </button>
+  <div id="save-result"></div>
 
   <div class="viz-row">
     <div class="viz-panel">

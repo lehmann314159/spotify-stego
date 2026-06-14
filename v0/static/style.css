@@ -303,3 +303,51 @@ code {
   border-radius: 3px;
   padding: 1px 4px;
 }
+
+/* Musicality score */
+.score-excellent { color: #1db954; }
+.score-good      { color: #4a9eff; }
+.score-fair      { color: #f0a500; }
+.score-needs-work { color: var(--color-error); }
+
+.score-detail summary {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.score-detail p {
+  margin: 0.5rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* Secondary button */
+.btn-secondary {
+  background: transparent;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 0.625rem 1.5rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 1rem;
+  display: inline-block;
+}
+
+.btn-secondary:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Save result partial */
+.save-success {
+  margin-top: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}

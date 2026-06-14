@@ -32,7 +32,7 @@ type Playlist struct {
 	Name string
 }
 
-// Client is a Spotify Web API client using the client credentials flow.
+// Client is a Spotify Web API client supporting client credentials and PKCE OAuth.
 type Client struct {
 	clientID     string
 	clientSecret string
@@ -42,6 +42,19 @@ type Client struct {
 	expiresAt   time.Time
 	reqCount    int
 	windowStart time.Time
+
+	// user token (OAuth PKCE)
+	userAccessToken  string
+	userRefreshToken string
+	userTokenExpiry  time.Time
+
+	// pending OAuth states: state → code verifier
+	// TODO: OAuth token not persisted across restarts.
+	pendingMu sync.Mutex
+	pending   map[string]string
+
+	// apiBaseURL can be overridden in tests.
+	apiBaseURL string
 }
 
 func New(clientID, clientSecret string) *Client {
@@ -49,6 +62,7 @@ func New(clientID, clientSecret string) *Client {
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		windowStart:  time.Now(),
+		apiBaseURL:   apiBase,
 	}
 }
 
@@ -59,21 +73,15 @@ func (c *Client) token() (string, error) {
 		return c.accessToken, nil
 	}
 	creds := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
-	resp, err := http.PostForm(authURL, url.Values{"grant_type": {"client_credentials"}})
-	if err != nil {
-		return "", fmt.Errorf("spotify token request: %w", err)
-	}
-	defer resp.Body.Close()
-	// Rebuild with auth header
 	req, _ := http.NewRequest("POST", authURL, strings.NewReader("grant_type=client_credentials"))
 	req.Header.Set("Authorization", "Basic "+creds)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp2, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("spotify auth: %w", err)
 	}
-	defer resp2.Body.Close()
-	body, _ := io.ReadAll(resp2.Body)
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
 	var tok struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
@@ -104,7 +112,7 @@ func (c *Client) get(path string, out interface{}) error {
 	}
 	c.mu.Unlock()
 
-	req, _ := http.NewRequest("GET", apiBase+path, nil)
+	req, _ := http.NewRequest("GET", c.apiBaseURL+path, nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
