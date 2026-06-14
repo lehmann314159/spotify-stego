@@ -11,3 +11,6 @@ v1/spotify-stego
 
 # macOS
 .DS_Store
+
+# IDE
+.idea/

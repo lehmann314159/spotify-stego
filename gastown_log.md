@@ -68,5 +68,9 @@ See `gastown_spotify_stego_pilot.md` in AiHomeLab for research design.
 
 ## V1 Log
 
-| Bead | Phase | Model | Prompt Summary | Result | Failure Mode | Notes |
+| B01 | 1.1+1.2 | qwen3.6-27b | Scaffold + SQLite schema | ✅ Pass | — | Clean. Track in stego/core, modernc.org/sqlite, idiomatic error wrapping. Polecat self-updated preamble tracker. |
+| B02 | 1.3 | qwen3.6-27b | Spotify API client | ✅ Pass | — | Lazy auth, token caching with mutex, pagination, 429 retry. Strong httptest suite (5 test cases). Pagination termination logic slightly convoluted but correct. |
+| B03 | 1.4 | qwen3.6-27b | Audio provider + stub + GetSongBPM | ✅ Pass | — | Clean interface/stub/real separation. openKeyToCamelot correct. Possible detail endpoint JSON shape mismatch ({"song":{"song":{}}} vs {"song":{}}); needs verification when real API wired. |
+| B04 | 1.5 | qwen3.6-27b | Camelot mapping + compatibility | ✅ Pass | — | All 24 keys + enharmonics correct. Wrap-around handled cleanly. Score logic concise and correct. All 10 test cases pass. |
+| B05 | 1.6+1.7 | qwen3.6-27b | Indexer + integration test | ✅ Pass | — | runIndexer extracted cleanly. Provider selection via env var correct. Hit compilation error (missing setters on Spotify/audio clients); self-diagnosed and fixed by adding SetHTTPClient/SetEndpoints/SetBaseURL methods to upstream packages without prompting. Strong G3-level recovery. |
 |------|-------|-------|----------------|--------|--------------|-------|
