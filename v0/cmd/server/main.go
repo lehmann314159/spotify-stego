@@ -108,20 +108,21 @@ func (s *server) handleIndex(w http.ResponseWriter, r *http.Request) {
 
 // encodeResult holds the output of a successful encode operation.
 type encodeResult struct {
-	Tracks          []encoder.Track
-	Message         string
-	MsgLen          int
-	Genre           string
-	PlaylistLen     int
-	TotalDuration   string
-	MusicalScore    float64
-	AvgCamelotScore float64 // mean Camelot score across transitions
-	AvgBPMScore     float64 // mean BPM score across transitions
-	ScoreLabel      string  // "Excellent" | "Good" | "Fair" | "Needs work"
-	ScoreClass      string  // "excellent" | "good" | "fair" | "needs-work"
-	WheelSVG        template.HTML
-	BPMSVG          template.HTML
-	Error           string
+	Tracks             []encoder.Track
+	Message            string
+	MsgLen             int
+	Genre              string
+	PlaylistLen        int
+	TotalDuration      string
+	AudioDataAvailable bool    // false when pool uses stub BPM/Camelot data
+	MusicalScore       float64
+	AvgCamelotScore    float64 // mean Camelot score across transitions
+	AvgBPMScore        float64 // mean BPM score across transitions
+	ScoreLabel         string  // "Excellent" | "Good" | "Fair" | "Needs work"
+	ScoreClass         string  // "excellent" | "good" | "fair" | "needs-work"
+	WheelSVG           template.HTML
+	BPMSVG             template.HTML
+	Error              string
 }
 
 // handleEncode encodes a message into a Spotify playlist and renders the results.
@@ -163,10 +164,13 @@ func (s *server) handleEncode(w http.ResponseWriter, r *http.Request) {
 	result.Genre = genre
 	result.PlaylistLen = len(playlist)
 	result.TotalDuration = formatDuration(playlist)
-	result.MusicalScore, result.AvgCamelotScore, result.AvgBPMScore = computeMusicalScore(playlist)
-	result.ScoreLabel, result.ScoreClass = musicalityLabel(result.MusicalScore)
-	result.WheelSVG = template.HTML(camelot.RenderWheelSVG(toCalWheelTracks(playlist)))
-	result.BPMSVG = template.HTML(encoder.RenderBPMGraphSVG(playlist))
+	result.AudioDataAvailable = poolHasAudioData(pool)
+	if result.AudioDataAvailable {
+		result.MusicalScore, result.AvgCamelotScore, result.AvgBPMScore = computeMusicalScore(playlist)
+		result.ScoreLabel, result.ScoreClass = musicalityLabel(result.MusicalScore)
+		result.WheelSVG = template.HTML(camelot.RenderWheelSVG(toCalWheelTracks(playlist)))
+		result.BPMSVG = template.HTML(encoder.RenderBPMGraphSVG(playlist))
+	}
 
 	s.lastEncMu.Lock()
 	s.lastEncode = &result
@@ -315,6 +319,21 @@ func (s *server) handleSave(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "save-result.html", saveResult{
 		PlaylistURL: "https://open.spotify.com/playlist/" + playlistID,
 	})
+}
+
+// poolHasAudioData returns true if the pool contains varied BPM and Camelot data.
+// All-identical values indicate a stub provider — scoring would be meaningless.
+func poolHasAudioData(pool []encoder.Track) bool {
+	if len(pool) < 2 {
+		return false
+	}
+	first := pool[0]
+	for _, t := range pool[1:] {
+		if t.BPM != first.BPM || t.CamelotCode != first.CamelotCode {
+			return true
+		}
+	}
+	return false
 }
 
 func dbTracksToEncoder(dbTracks []database.Track) []encoder.Track {

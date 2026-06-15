@@ -11,6 +11,7 @@
     <div class="stat"><span class="stat-label">Total duration</span><span class="stat-value">{{.TotalDuration}}</span></div>
     <div class="stat">
       <span class="stat-label">Musicality score</span>
+      {{if .AudioDataAvailable}}
       <span class="stat-value score-{{.ScoreClass}}">
         {{printf "%.0f" .MusicalScore}}% — {{.ScoreLabel}}
       </span>
@@ -21,12 +22,18 @@
         BPM proximity contributes up to 5 points. Combined and normalized to
         0–100%.</p>
       </details>
+      {{else}}
+      <span class="stat-value stat-unavailable">Unavailable — audio data not indexed</span>
+      {{end}}
     </div>
   </div>
 
   <table class="track-table">
     <thead>
-      <tr><th>#</th><th>Title</th><th>Artist</th><th>Camelot</th><th>BPM</th></tr>
+      <tr>
+        <th>#</th><th>Title</th><th>Artist</th>
+        {{if .AudioDataAvailable}}<th>Camelot</th><th>BPM</th>{{end}}
+      </tr>
     </thead>
     <tbody>
     {{range $i, $t := .Tracks}}
@@ -34,8 +41,10 @@
         <td>{{inc $i}}</td>
         <td>{{$t.Title}}</td>
         <td>{{$t.Artist}}</td>
+        {{if $.AudioDataAvailable}}
         <td><span class="camelot-badge">{{$t.CamelotCode}}</span></td>
         <td>{{printf "%.0f" $t.BPM}}</td>
+        {{end}}
       </tr>
     {{end}}
     </tbody>
@@ -49,6 +58,7 @@
   </button>
   <div id="save-result"></div>
 
+  {{if .AudioDataAvailable}}
   <div class="viz-row">
     <div class="viz-panel">
       <h3>Camelot Wheel</h3>
@@ -59,6 +69,7 @@
       {{.BPMSVG}}
     </div>
   </div>
+  {{end}}
 </div>
 {{end}}
 {{end}}
