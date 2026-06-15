@@ -35,51 +35,43 @@ func main() {
 	sp := spotify.New(clientID, clientSecret)
 	provider := audio.StubProvider{}
 
-	playlists, err := sp.GetPopularPlaylistsByGenre(*genre)
+	log.Printf("Searching tracks for genre %q...", *genre)
+	tracks, err := sp.GetTracksByGenre(*genre)
 	if err != nil {
-		log.Fatalf("get playlists: %v", err)
+		log.Fatalf("get tracks: %v", err)
 	}
-	log.Printf("Found %d playlists for genre %q", len(playlists), *genre)
+	log.Printf("Found %d tracks for genre %q", len(tracks), *genre)
 
 	indexed, skipped, errCount := 0, 0, 0
-	for _, pl := range playlists {
-		log.Printf("Indexing playlist: %s (%s)", pl.Name, pl.ID)
-		tracks, err := sp.GetPlaylistTracks(pl.ID)
+	for _, t := range tracks {
+		if t.ID == "" || t.Title == "" {
+			skipped++
+			continue
+		}
+		audioData, err := provider.GetAudioData(t.Title, t.Artist)
 		if err != nil {
-			log.Printf("  get tracks error: %v", err)
+			log.Printf("  audio data error for %q: %v", t.Title, err)
 			errCount++
 			continue
 		}
-		for _, t := range tracks {
-			if t.ID == "" || t.Title == "" {
-				skipped++
-				continue
-			}
-			audioData, err := provider.GetAudioData(t.Title, t.Artist)
-			if err != nil {
-				log.Printf("  audio data error for %q: %v", t.Title, err)
-				errCount++
-				continue
-			}
-			err = database.UpsertTrack(db, database.Track{
-				ID:          t.ID,
-				Title:       t.Title,
-				Artist:      t.Artist,
-				Genre:       *genre,
-				DurationMS:  t.DurationMS,
-				Tempo:       audioData.BPM,
-				KeyOf:       audioData.KeyOf,
-				CamelotCode: audioData.CamelotCode,
-			})
-			if err != nil {
-				log.Printf("  upsert error for %q: %v", t.Title, err)
-				errCount++
-				continue
-			}
-			indexed++
-			if indexed%50 == 0 {
-				fmt.Printf("Progress: %d indexed, %d skipped, %d errors\n", indexed, skipped, errCount)
-			}
+		err = database.UpsertTrack(db, database.Track{
+			ID:          t.ID,
+			Title:       t.Title,
+			Artist:      t.Artist,
+			Genre:       *genre,
+			DurationMS:  t.DurationMS,
+			Tempo:       audioData.BPM,
+			KeyOf:       audioData.KeyOf,
+			CamelotCode: audioData.CamelotCode,
+		})
+		if err != nil {
+			log.Printf("  upsert error for %q: %v", t.Title, err)
+			errCount++
+			continue
+		}
+		indexed++
+		if indexed%50 == 0 {
+			fmt.Printf("Progress: %d indexed, %d skipped, %d errors\n", indexed, skipped, errCount)
 		}
 	}
 	fmt.Printf("Done: %d indexed, %d skipped, %d errors\n", indexed, skipped, errCount)

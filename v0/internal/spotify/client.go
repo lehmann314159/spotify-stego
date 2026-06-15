@@ -131,24 +131,83 @@ func (c *Client) get(path string, out interface{}) error {
 }
 
 // GetPopularPlaylistsByGenre searches for playlists by genre keyword.
+// Paginates through all available results (Spotify caps new apps at 5 per page).
 func (c *Client) GetPopularPlaylistsByGenre(genre string) ([]Playlist, error) {
-	var result struct {
-		Playlists struct {
-			Items []struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
-			} `json:"items"`
-		} `json:"playlists"`
-	}
-	path := fmt.Sprintf("/search?q=%s&type=playlist&limit=20", url.QueryEscape(genre))
-	if err := c.get(path, &result); err != nil {
-		return nil, err
-	}
-	playlists := make([]Playlist, 0, len(result.Playlists.Items))
-	for _, item := range result.Playlists.Items {
-		playlists = append(playlists, Playlist{ID: item.ID, Name: item.Name})
+	var playlists []Playlist
+	path := fmt.Sprintf("/search?q=%s&type=playlist&market=US", url.QueryEscape(genre))
+
+	for path != "" {
+		var result struct {
+			Playlists struct {
+				Next  *string `json:"next"`
+				Items []struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"items"`
+			} `json:"playlists"`
+		}
+		if err := c.get(path, &result); err != nil {
+			return nil, err
+		}
+		for _, item := range result.Playlists.Items {
+			if item.ID != "" {
+				playlists = append(playlists, Playlist{ID: item.ID, Name: item.Name})
+			}
+		}
+		if result.Playlists.Next != nil && *result.Playlists.Next != "" {
+			path = strings.TrimPrefix(*result.Playlists.Next, apiBase)
+		} else {
+			path = ""
+		}
 	}
 	return playlists, nil
+}
+
+// GetTracksByGenre searches for tracks matching the genre using Spotify's
+// genre: search filter and paginates through all results.
+func (c *Client) GetTracksByGenre(genre string) ([]Track, error) {
+	var tracks []Track
+	path := fmt.Sprintf("/search?q=genre%%3A%s&type=track&market=US", url.QueryEscape(genre))
+
+	for path != "" {
+		var result struct {
+			Tracks struct {
+				Next  *string `json:"next"`
+				Items []struct {
+					ID         string `json:"id"`
+					Name       string `json:"name"`
+					DurationMS int    `json:"duration_ms"`
+					Artists    []struct {
+						Name string `json:"name"`
+					} `json:"artists"`
+				} `json:"items"`
+			} `json:"tracks"`
+		}
+		if err := c.get(path, &result); err != nil {
+			return nil, err
+		}
+		for _, item := range result.Tracks.Items {
+			if item.ID == "" {
+				continue
+			}
+			artist := ""
+			if len(item.Artists) > 0 {
+				artist = item.Artists[0].Name
+			}
+			tracks = append(tracks, Track{
+				ID:         item.ID,
+				Title:      item.Name,
+				Artist:     artist,
+				DurationMS: item.DurationMS,
+			})
+		}
+		if result.Tracks.Next != nil && *result.Tracks.Next != "" {
+			path = strings.TrimPrefix(*result.Tracks.Next, apiBase)
+		} else {
+			path = ""
+		}
+	}
+	return tracks, nil
 }
 
 // GetPlaylistTracks fetches all tracks from a playlist (handles pagination).
