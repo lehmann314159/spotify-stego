@@ -259,7 +259,7 @@ func (c *Client) GetCurrentUserID() (string, error) {
 	return result.ID, nil
 }
 
-// CreatePlaylist calls POST /v1/users/{userID}/playlists.
+// CreatePlaylist calls POST /v1/me/playlists.
 // Returns the new playlist Spotify ID.
 func (c *Client) CreatePlaylist(userID, name string, public bool) (string, error) {
 	body, _ := json.Marshal(map[string]interface{}{
@@ -269,7 +269,7 @@ func (c *Client) CreatePlaylist(userID, name string, public bool) (string, error
 	var result struct {
 		ID string `json:"id"`
 	}
-	if err := c.doUser("POST", fmt.Sprintf("/users/%s/playlists", userID), body, &result); err != nil {
+	if err := c.doUser("POST", "/me/playlists", body, &result); err != nil {
 		return "", err
 	}
 	return result.ID, nil

@@ -65,7 +65,7 @@ func TestCreatePlaylistRequest(t *testing.T) {
 		case "/me":
 			w.Header().Set("Content-Type", "application/json")
 			fmt.Fprint(w, `{"id":"uid"}`)
-		case "/users/uid/playlists":
+		case "/me/playlists":
 			var body map[string]interface{}
 			json.NewDecoder(r.Body).Decode(&body) //nolint:errcheck
 			if v, ok := body["public"].(bool); ok && v {
