@@ -1,0 +1,20 @@
+services:
+  spotify-stego:
+    image: lehmann314159/spotify-stego:latest
+    build: ./v0
+    container_name: spotify-stego
+    environment:
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - SPOTIFY_REDIRECT_URI=${SPOTIFY_REDIRECT_URI}
+      - DB_PATH=/app/data/tracks.db
+      - ADDR=:8080
+      - SPOTIFY_PLAYLIST_PRIVATE=${SPOTIFY_PLAYLIST_PRIVATE:-false}
+    volumes:
+      - spotify-stego-data:/app/data
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+volumes:
+  spotify-stego-data:
