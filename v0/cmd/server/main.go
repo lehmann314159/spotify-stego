@@ -47,6 +47,10 @@ func main() {
 	var sp *spotify.Client
 	if id, secret := os.Getenv("SPOTIFY_CLIENT_ID"), os.Getenv("SPOTIFY_CLIENT_SECRET"); id != "" && secret != "" {
 		sp = spotify.New(id, secret)
+		if authURL, apiBase := os.Getenv("SPOTIFY_AUTH_URL"), os.Getenv("SPOTIFY_API_BASE"); authURL != "" && apiBase != "" {
+			sp.SetBaseURLs(authURL, apiBase)
+			log.Printf("Using mock Spotify backend: auth=%s api=%s", authURL, apiBase)
+		}
 	}
 
 	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI") // TODO: set SPOTIFY_REDIRECT_URI in .env before testing OAuth

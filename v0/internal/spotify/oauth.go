@@ -88,7 +88,7 @@ func (c *Client) ExchangeCode(state, code, redirectURI string) error {
 		"client_id":     {c.clientID},
 		"code_verifier": {verifier},
 	}
-	req, _ := http.NewRequest("POST", authURL, strings.NewReader(params.Encode()))
+	req, _ := http.NewRequest("POST", c.authBaseURL, strings.NewReader(params.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -152,7 +152,7 @@ func (c *Client) refreshUserToken(refreshToken string) (string, error) {
 		"refresh_token": {refreshToken},
 		"client_id":     {c.clientID},
 	}
-	req, _ := http.NewRequest("POST", authURL, strings.NewReader(params.Encode()))
+	req, _ := http.NewRequest("POST", c.authBaseURL, strings.NewReader(params.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(req)

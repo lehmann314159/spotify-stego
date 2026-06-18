@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	authURL = "https://accounts.spotify.com/api/token"
-	apiBase = "https://api.spotify.com/v1"
+	defaultAuthURL = "https://accounts.spotify.com/api/token"
+	defaultAPIBase = "https://api.spotify.com/v1"
 )
 
 // Track holds the fields we care about from the Spotify API.
@@ -53,8 +53,9 @@ type Client struct {
 	pendingMu sync.Mutex
 	pending   map[string]string
 
-	// apiBaseURL can be overridden in tests.
-	apiBaseURL string
+	// authBaseURL and apiBaseURL can be overridden for mock backends.
+	authBaseURL string
+	apiBaseURL  string
 }
 
 func New(clientID, clientSecret string) *Client {
@@ -62,8 +63,25 @@ func New(clientID, clientSecret string) *Client {
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		windowStart:  time.Now(),
-		apiBaseURL:   apiBase,
+		authBaseURL:  defaultAuthURL,
+		apiBaseURL:   defaultAPIBase,
 	}
+}
+
+// SetBaseURLs overrides the auth and API base URLs (for mock backends).
+func (c *Client) SetBaseURLs(authURL, apiBase string) {
+	c.authBaseURL = authURL
+	c.apiBaseURL = apiBase
+}
+
+// nextPath converts a pagination next URL into a path for get().
+// If it's an absolute URL with our base prefix, the prefix is stripped.
+// If it's already relative (starts with "/"), it's used as-is.
+func (c *Client) nextPath(next string) string {
+	if strings.HasPrefix(next, "/") {
+		return next
+	}
+	return strings.TrimPrefix(next, c.apiBaseURL)
 }
 
 func (c *Client) token() (string, error) {
@@ -73,7 +91,7 @@ func (c *Client) token() (string, error) {
 		return c.accessToken, nil
 	}
 	creds := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
-	req, _ := http.NewRequest("POST", authURL, strings.NewReader("grant_type=client_credentials"))
+	req, _ := http.NewRequest("POST", c.authBaseURL, strings.NewReader("grant_type=client_credentials"))
 	req.Header.Set("Authorization", "Basic "+creds)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := http.DefaultClient.Do(req)
@@ -155,7 +173,7 @@ func (c *Client) GetPopularPlaylistsByGenre(genre string) ([]Playlist, error) {
 			}
 		}
 		if result.Playlists.Next != nil && *result.Playlists.Next != "" {
-			path = strings.TrimPrefix(*result.Playlists.Next, apiBase)
+			path = c.nextPath(*result.Playlists.Next)
 		} else {
 			path = ""
 		}
@@ -202,7 +220,7 @@ func (c *Client) GetTracksByGenre(genre string) ([]Track, error) {
 			})
 		}
 		if result.Tracks.Next != nil && *result.Tracks.Next != "" {
-			path = strings.TrimPrefix(*result.Tracks.Next, apiBase)
+			path = c.nextPath(*result.Tracks.Next)
 		} else {
 			path = ""
 		}
@@ -247,9 +265,7 @@ func (c *Client) GetPlaylistTracks(playlistID string) ([]Track, error) {
 			})
 		}
 		if result.Next != nil && *result.Next != "" {
-			// Strip base URL for our get() helper
-			next := strings.TrimPrefix(*result.Next, apiBase)
-			path = next
+			path = c.nextPath(*result.Next)
 		} else {
 			path = ""
 		}

@@ -33,6 +33,10 @@ func main() {
 	defer db.Close()
 
 	sp := spotify.New(clientID, clientSecret)
+	if authURL, apiBase := os.Getenv("SPOTIFY_AUTH_URL"), os.Getenv("SPOTIFY_API_BASE"); authURL != "" && apiBase != "" {
+		sp.SetBaseURLs(authURL, apiBase)
+		log.Printf("Using mock backend: auth=%s api=%s", authURL, apiBase)
+	}
 	provider := audio.StubProvider{}
 
 	log.Printf("Searching tracks for genre %q...", *genre)
