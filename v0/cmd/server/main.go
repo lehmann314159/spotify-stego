@@ -161,7 +161,12 @@ func (s *server) handleEncode(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pool := dbTracksToEncoder(dbTracks)
-	playlist, err := encoder.EncodeMessage(pool, message, keywords, 20)
+	minLength := 3 + len(encoder.NormalizeMessage(message)) // 3-char length prefix + message
+	targetLength := 20
+	if minLength > targetLength {
+		targetLength = minLength
+	}
+	playlist, err := encoder.EncodeMessage(pool, message, keywords, targetLength)
 	if err != nil {
 		result.Error = err.Error()
 		renderTemplate(w, "encode-results.html", result)
