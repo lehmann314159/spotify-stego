@@ -50,12 +50,14 @@
     </tbody>
   </table>
 
-  <button class="btn-secondary"
-          hx-post="/encode/save"
-          hx-target="#save-result"
-          hx-swap="innerHTML">
-    Save to Spotify
-  </button>
+  <form hx-post="/encode/save" hx-target="#save-result" hx-swap="innerHTML" class="save-form">
+    <label for="playlist_name">Playlist name <span class="hint">(must contain your keywords in order)</span></label>
+    <input type="text" id="playlist_name" name="playlist_name"
+           value="Stego: {{.Genre}} — {{index .Keywords 0}} {{index .Keywords 1}} {{index .Keywords 2}}"
+           placeholder="e.g. My {{index .Keywords 0}} {{index .Keywords 1}} {{index .Keywords 2}} playlist"
+           class="playlist-name-input" />
+    <button type="submit" class="btn-secondary">Save to Spotify</button>
+  </form>
   <div id="save-result"></div>
 
   {{if .AudioDataAvailable}}

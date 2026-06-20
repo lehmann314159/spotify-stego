@@ -129,6 +129,7 @@ type encodeResult struct {
 	Message            string
 	MsgLen             int
 	Genre              string
+	Keywords           [3]string
 	PlaylistLen        int
 	TotalDuration      string
 	AudioDataAvailable bool    // false when pool uses stub BPM/Camelot data
@@ -160,7 +161,7 @@ func (s *server) handleEncode(w http.ResponseWriter, r *http.Request) {
 	k3 := r.FormValue("k3")
 	keywords := [3]string{k1, k2, k3}
 
-	result := encodeResult{Message: message, MsgLen: len(message)}
+	result := encodeResult{Message: message, MsgLen: len(message), Keywords: keywords}
 
 	dbTracks, err := database.GetTracksByGenre(s.db, genre)
 	if err != nil || len(dbTracks) == 0 {
@@ -321,8 +322,22 @@ func (s *server) handleSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := r.ParseForm(); err != nil {
+		renderTemplate(w, "save-result.html", saveResult{Error: "bad form"})
+		return
+	}
+	name := strings.TrimSpace(r.FormValue("playlist_name"))
+	if name == "" {
+		name = fmt.Sprintf("Stego: %s %s", enc.Genre, time.Now().Format("2006-01-02"))
+	}
+	if !keywordsInOrder(name, enc.Keywords) {
+		renderTemplate(w, "save-result.html", saveResult{
+			Error: fmt.Sprintf("Playlist name must contain the keywords %q, %q, %q in order.", enc.Keywords[0], enc.Keywords[1], enc.Keywords[2]),
+		})
+		return
+	}
+
 	public := os.Getenv("SPOTIFY_PLAYLIST_PRIVATE") != "true"
-	name := fmt.Sprintf("Stego: %s %s", enc.Genre, time.Now().Format("2006-01-02"))
 	playlistID, err := s.sp.CreatePlaylist(userID, name, public)
 	if err != nil {
 		renderTemplate(w, "save-result.html", saveResult{Error: err.Error()})
@@ -341,6 +356,23 @@ func (s *server) handleSave(w http.ResponseWriter, r *http.Request) {
 	renderTemplate(w, "save-result.html", saveResult{
 		PlaylistURL: s.playlistBaseURL + playlistID,
 	})
+}
+
+// keywordsInOrder returns true if all three keywords appear in name in sequence (case-insensitive).
+func keywordsInOrder(name string, keywords [3]string) bool {
+	lower := strings.ToLower(name)
+	pos := 0
+	for _, kw := range keywords {
+		if kw == "" {
+			continue
+		}
+		idx := strings.Index(lower[pos:], strings.ToLower(kw))
+		if idx < 0 {
+			return false
+		}
+		pos += idx + len(kw)
+	}
+	return true
 }
 
 // poolHasAudioData returns true if the pool contains varied BPM and Camelot data.
