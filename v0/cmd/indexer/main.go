@@ -15,10 +15,16 @@ import (
 
 func main() {
 	genre := flag.String("genre", "pop", "Genre to index")
-	dbPath := flag.String("db", "tracks.db", "SQLite database path")
+	dbPath := flag.String("db", "", "SQLite database path (overrides DB_PATH env var)")
 	flag.Parse()
 
 	_ = godotenv.Load()
+
+	if *dbPath == "" {
+		if *dbPath = os.Getenv("DB_PATH"); *dbPath == "" {
+			*dbPath = "tracks.db"
+		}
+	}
 
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
