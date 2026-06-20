@@ -34,7 +34,7 @@ func TestConstrainedTrackYieldsNeeded(t *testing.T) {
 	rng := DeriveRNG([3]string{"test", "one", "two"})
 
 	needed := []byte{'h'}
-	found, err := FindConstrained(nil, needed, pool, map[string]bool{}, rng)
+	found, _, err := FindConstrained(nil, needed, pool, map[string]bool{}, rng)
 	if err != nil {
 		t.Fatalf("FindConstrained: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestFallbackToRelaxedCamelot(t *testing.T) {
 	rng := DeriveRNG([3]string{"f", "g", "h"})
 	needed := []byte{'z'}
 
-	found, err := FindConstrained(prev, needed, pool, map[string]bool{}, rng)
+	found, _, err := FindConstrained(prev, needed, pool, map[string]bool{}, rng)
 	if err != nil {
 		t.Fatalf("expected to find 'z' track: %v", err)
 	}
