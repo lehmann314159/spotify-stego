@@ -59,10 +59,18 @@ func main() {
 
 	redirectURI := os.Getenv("SPOTIFY_REDIRECT_URI") // TODO: set SPOTIFY_REDIRECT_URI in .env before testing OAuth
 
+	playlistBaseURL := "https://open.spotify.com/playlist/"
+	if apiBase := os.Getenv("SPOTIFY_API_BASE"); apiBase != "" {
+		// Strip the API path (e.g. /v1) to get the web root, then point at the playlists UI.
+		base := strings.TrimRight(strings.TrimSuffix(strings.TrimSuffix(apiBase, "/v1"), "/"), "/")
+		playlistBaseURL = base + "/playlists/"
+	}
+
 	srv := &server{
-		db:          db,
-		sp:          sp,
-		redirectURI: redirectURI,
+		db:              db,
+		sp:              sp,
+		redirectURI:     redirectURI,
+		playlistBaseURL: playlistBaseURL,
 	}
 
 	mux := http.NewServeMux()
@@ -84,11 +92,12 @@ func main() {
 
 // server holds shared server state.
 type server struct {
-	db          *sql.DB
-	sp          *spotify.Client
-	redirectURI string // TODO: set SPOTIFY_REDIRECT_URI in .env before testing OAuth
-	lastEncode  *encodeResult
-	lastEncMu   sync.Mutex
+	db              *sql.DB
+	sp              *spotify.Client
+	redirectURI     string // TODO: set SPOTIFY_REDIRECT_URI in .env before testing OAuth
+	playlistBaseURL string // e.g. "https://open.spotify.com/playlist/" or mockspotify equivalent
+	lastEncode      *encodeResult
+	lastEncMu       sync.Mutex
 }
 
 func logging(next http.Handler) http.Handler {
@@ -330,7 +339,7 @@ func (s *server) handleSave(w http.ResponseWriter, r *http.Request) {
 	}
 
 	renderTemplate(w, "save-result.html", saveResult{
-		PlaylistURL: "https://open.spotify.com/playlist/" + playlistID,
+		PlaylistURL: s.playlistBaseURL + playlistID,
 	})
 }
 
