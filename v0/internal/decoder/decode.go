@@ -27,7 +27,12 @@ func DecodePlaylist(tracks []Track, keywords [3]string) (string, []TrackExtracti
 	for _, t := range tracks {
 		letters := encoder.ExtractFromTrack(rng, t.Title)
 		extractions = append(extractions, TrackExtraction{Track: t, Letters: letters})
-		allLetters = append(allLetters, letters...)
+		// Only the first letter is signal — the encoder selects tracks by their
+		// first extracted letter. Extra letters advance the PRNG (already done
+		// by ExtractFromTrack) but don't carry payload.
+		if len(letters) > 0 {
+			allLetters = append(allLetters, letters[0])
+		}
 	}
 
 	if len(allLetters) < 3 {
