@@ -1,9 +1,9 @@
 {{define "decode.html"}}
 <form hx-post="/decode" hx-target="#decode-results" hx-swap="innerHTML" hx-indicator="#decode-spinner">
   <div class="form-group">
-    <label for="tracks">Playlist Tracks</label>
-    <textarea id="tracks" name="tracks" rows="10"
-      placeholder="One track per line: Title | Artist&#10;e.g. Bohemian Rhapsody | Queen"></textarea>
+    <label for="playlist_name">Playlist Name</label>
+    <input type="text" id="playlist_name" name="playlist_name" required
+           placeholder="e.g. Stego: pop — sunrise delta tango">
   </div>
 
   <fieldset>

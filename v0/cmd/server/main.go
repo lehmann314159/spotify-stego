@@ -203,12 +203,13 @@ func (s *server) handleEncode(w http.ResponseWriter, r *http.Request) {
 }
 
 type decodeResult struct {
-	Message     string
-	Extractions []decoder.TrackExtraction
-	Error       string
+	PlaylistName string
+	Message      string
+	Extractions  []decoder.TrackExtraction
+	Error        string
 }
 
-// handleDecode decodes a playlist of track titles and renders the hidden message.
+// handleDecode looks up a playlist by name, fetches its tracks, and decodes the hidden message.
 func (s *server) handleDecode(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -219,31 +220,42 @@ func (s *server) handleDecode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	trackList := r.FormValue("tracks")
+	playlistName := strings.TrimSpace(r.FormValue("playlist_name"))
 	k1 := r.FormValue("k1")
 	k2 := r.FormValue("k2")
 	k3 := r.FormValue("k3")
 	keywords := [3]string{k1, k2, k3}
 
-	result := decodeResult{}
-	lines := strings.Split(strings.TrimSpace(trackList), "\n")
-	var tracks []encoder.Track
-	for i, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		parts := strings.SplitN(line, "|", 2)
-		t := encoder.Track{ID: fmt.Sprintf("dec-%d", i), Title: strings.TrimSpace(parts[0])}
-		if len(parts) == 2 {
-			t.Artist = strings.TrimSpace(parts[1])
-		}
-		tracks = append(tracks, t)
-	}
-	if len(tracks) == 0 {
-		result.Error = "no tracks provided"
+	result := decodeResult{PlaylistName: playlistName}
+
+	if s.sp == nil {
+		result.Error = "Spotify client not configured"
 		renderTemplate(w, "decode-results.html", result)
 		return
+	}
+
+	playlistID, err := s.sp.FindPlaylistByName(playlistName)
+	if err != nil {
+		result.Error = err.Error()
+		renderTemplate(w, "decode-results.html", result)
+		return
+	}
+
+	spTracks, err := s.sp.GetPlaylistTracks(playlistID)
+	if err != nil {
+		result.Error = fmt.Sprintf("fetching playlist tracks: %v", err)
+		renderTemplate(w, "decode-results.html", result)
+		return
+	}
+	if len(spTracks) == 0 {
+		result.Error = "playlist is empty"
+		renderTemplate(w, "decode-results.html", result)
+		return
+	}
+
+	tracks := make([]encoder.Track, len(spTracks))
+	for i, t := range spTracks {
+		tracks[i] = encoder.Track{ID: t.ID, Title: t.Title, Artist: t.Artist}
 	}
 
 	message, extractions, err := decoder.DecodePlaylist(tracks, keywords)

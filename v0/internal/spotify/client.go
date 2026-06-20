@@ -162,6 +162,27 @@ func (c *Client) get(path string, out interface{}) error {
 	return json.Unmarshal(body, out)
 }
 
+// FindPlaylistByName searches for a playlist whose name contains the given string
+// and returns the ID of the first match. Returns an error if none found.
+func (c *Client) FindPlaylistByName(name string) (string, error) {
+	var result struct {
+		Playlists struct {
+			Items []struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"items"`
+		} `json:"playlists"`
+	}
+	path := fmt.Sprintf("/search?q=%s&type=playlist&limit=10", url.QueryEscape(name))
+	if err := c.get(path, &result); err != nil {
+		return "", err
+	}
+	if len(result.Playlists.Items) == 0 {
+		return "", fmt.Errorf("no playlist found matching %q", name)
+	}
+	return result.Playlists.Items[0].ID, nil
+}
+
 // GetPopularPlaylistsByGenre searches for playlists by genre keyword.
 // Paginates through all available results (Spotify caps new apps at 5 per page).
 func (c *Client) GetPopularPlaylistsByGenre(genre string) ([]Playlist, error) {

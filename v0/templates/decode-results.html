@@ -4,18 +4,20 @@
 {{else}}
 <div class="results">
   <h2>Decoded Message</h2>
+  {{if .PlaylistName}}<p class="playlist-ref">Playlist: <em>{{.PlaylistName}}</em></p>{{end}}
   <div class="message-box">{{.Message}}</div>
 
   <h3>Per-track extraction</h3>
   <table class="track-table">
     <thead>
-      <tr><th>#</th><th>Title</th><th>Letters extracted</th></tr>
+      <tr><th>#</th><th>Title</th><th>Artist</th><th>Letters extracted</th></tr>
     </thead>
     <tbody>
     {{range $i, $e := .Extractions}}
       <tr>
         <td>{{inc $i}}</td>
         <td>{{$e.Track.Title}}</td>
+        <td>{{$e.Track.Artist}}</td>
         <td><code>{{string $e.Letters}}</code></td>
       </tr>
     {{end}}
