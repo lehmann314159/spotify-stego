@@ -4,21 +4,19 @@ services:
     build: ./v0
     container_name: spotify-stego
     environment:
-      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
-      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-mock}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET:-mock}
       - SPOTIFY_REDIRECT_URI=${SPOTIFY_REDIRECT_URI}
+      - SPOTIFY_AUTH_URL=${SPOTIFY_AUTH_URL:-https://mockspotify.verynormalserver.com/api/token}
+      - SPOTIFY_API_BASE=${SPOTIFY_API_BASE:-https://mockspotify.verynormalserver.com/v1}
       - DB_PATH=/app/data/tracks.db
       - ADDR=:8080
       - SPOTIFY_PLAYLIST_PRIVATE=${SPOTIFY_PLAYLIST_PRIVATE:-false}
     volumes:
       - spotify-stego-data:/app/data
+    ports:
+      - "8082:8080"
     restart: unless-stopped
-    networks:
-      - web
 
 volumes:
   spotify-stego-data:
-
-networks:
-  web:
-    external: true
