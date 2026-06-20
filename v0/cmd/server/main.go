@@ -49,7 +49,11 @@ func main() {
 		sp = spotify.New(id, secret)
 		if authURL, apiBase := os.Getenv("SPOTIFY_AUTH_URL"), os.Getenv("SPOTIFY_API_BASE"); authURL != "" && apiBase != "" {
 			sp.SetBaseURLs(authURL, apiBase)
-			log.Printf("Using mock Spotify backend: auth=%s api=%s", authURL, apiBase)
+			if err := sp.MockAuthenticate(); err != nil {
+				log.Printf("Warning: mock auth failed: %v", err)
+			} else {
+				log.Printf("Using mock Spotify backend: auth=%s api=%s", authURL, apiBase)
+			}
 		}
 	}
 

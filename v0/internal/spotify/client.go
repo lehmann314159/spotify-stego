@@ -74,6 +74,20 @@ func (c *Client) SetBaseURLs(authURL, apiBase string) {
 	c.apiBaseURL = apiBase
 }
 
+// MockAuthenticate uses the client credentials token as the user token.
+// Call this in mock/dev mode to skip the OAuth PKCE flow.
+func (c *Client) MockAuthenticate() error {
+	tok, err := c.token()
+	if err != nil {
+		return err
+	}
+	c.mu.Lock()
+	c.userAccessToken = tok
+	c.userTokenExpiry = time.Now().Add(24 * time.Hour)
+	c.mu.Unlock()
+	return nil
+}
+
 // nextPath converts a pagination next URL into a path for get().
 // If it's an absolute URL with our base prefix, the prefix is stripped.
 // If it's already relative (starts with "/"), it's used as-is.
