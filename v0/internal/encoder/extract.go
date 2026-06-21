@@ -38,17 +38,20 @@ func maxWordLen(title string) int {
 	return max
 }
 
-// ExtractFromTrack uses rng to decide how many letters to pull and which
-// positions to pick from the title's letter string. Always advances rng fully
-// so encoder and decoder stay in sync.
+// ExtractFromTrack extracts letters from a track title using rng for position
+// sampling. The count is derived from the title itself (not the PRNG) so
+// different tracks yield different counts, enabling the constrained encoder to
+// find tracks that carry 1 or 2 payload bytes in a single slot.
+// Always advances rng for every position draw so encoder and decoder stay in sync.
 func ExtractFromTrack(rng *RNG, title string) []byte {
 	letters := titleLetters(title)
 	cap3 := maxWordLen(title)
-	// count in [1, cap3]
-	count := 1 + rng.Intn(cap3)
+	// Derive count from title length so candidates get distinct counts.
+	// Range: [1, cap3].
+	count := 1 + (len(letters) % cap3)
 	if len(letters) == 0 {
 		for i := 0; i < count; i++ {
-			rng.Intn(1) // advance for each position slot
+			rng.Intn(1) // advance PRNG for each position slot
 		}
 		return nil
 	}
