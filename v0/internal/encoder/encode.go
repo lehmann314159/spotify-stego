@@ -73,17 +73,15 @@ func EncodeMessage(pool []Track, message string, keywords [3]string, targetLengt
 	playlist := make([]Track, 0, targetLength)
 
 	var prev *Track
-	for payloadPos := 0; payloadPos < len(payload); {
-		remaining := []byte(payload[payloadPos:])
-		t, n, err := findWithFallback(prev, remaining, pool, used, rng)
+	for i, ch := range []byte(payload) {
+		t, _, err := findWithFallback(prev, []byte{ch}, pool, used, rng)
 		if err != nil {
-			return nil, fmt.Errorf("encode position %d (char %q): %w", payloadPos, payload[payloadPos], err)
+			return nil, fmt.Errorf("encode position %d (char %q): %w", i, ch, err)
 		}
 		ExtractFromTrack(rng, t.Title) // commit: advance rng
 		used[t.ID] = true
 		playlist = append(playlist, *t)
 		prev = &playlist[len(playlist)-1]
-		payloadPos += n
 	}
 
 	// Fill remainder with greedy unconstrained tracks

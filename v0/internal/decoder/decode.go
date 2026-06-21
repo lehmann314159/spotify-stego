@@ -27,7 +27,9 @@ func DecodePlaylist(tracks []Track, keywords [3]string) (string, []TrackExtracti
 	for _, t := range tracks {
 		letters := encoder.ExtractFromTrack(rng, t.Title)
 		extractions = append(extractions, TrackExtraction{Track: t, Letters: letters})
-		allLetters = append(allLetters, letters...)
+		if len(letters) > 0 {
+			allLetters = append(allLetters, letters[0])
+		}
 	}
 
 	if len(allLetters) < 3 {
